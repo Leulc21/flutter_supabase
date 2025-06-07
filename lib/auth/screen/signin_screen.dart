@@ -1,6 +1,10 @@
-// ignore_for_file: unnecessary_const
+// ignore_for_file: unnecessary_const, use_build_context_synchronously, duplicate_ignore
 
+import 'package:flu_supa/auth/screen/signup_screen.dart';
+import 'package:flu_supa/auth/service/auth_service.dart';
+import 'package:flu_supa/screens/home.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -13,7 +17,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   String? email;
   String? password;
-
+  final auth = AuthService();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,10 +102,37 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               _formKey.currentState!.save();
-                              // Navigate to the main screen
+
+                              try {
+                                final response =
+                                    await auth.signIn(email!, password!);
+                                if (response.session != null &&
+                                    response.user != null) {
+                                  // ignore: use_build_context_synchronously
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomeView(),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          "Authentication failed. Please try again."),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                final errorMessage = e is AuthException
+                                    ? e.message
+                                    : 'Unexpected error';
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(errorMessage)),
+                                );
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -131,7 +162,13 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignUpScreen(),
+                                ));
+                          },
                           child: Text.rich(
                             const TextSpan(
                               text: "Don’t have an account? ",

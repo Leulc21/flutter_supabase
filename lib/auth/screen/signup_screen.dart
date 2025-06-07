@@ -1,9 +1,25 @@
+// ignore_for_file: use_build_context_synchronously, curly_braces_in_flow_control_structures
+
+import 'package:flu_supa/auth/screen/signin_screen.dart';
+import 'package:flu_supa/auth/service/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  String? email;
+  String? password;
+  String? fullName;
+  String? phone;
   final _formKey = GlobalKey<FormState>();
+  final _auth = AuthService();
 
-  SignUpScreen({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,100 +48,148 @@ class SignUpScreen extends StatelessWidget {
                   key: _formKey,
                   child: Column(
                     children: [
+                      // Full Name
                       TextFormField(
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Please enter Full Name'
+                            : null,
                         decoration: const InputDecoration(
                           hintText: 'Full name',
                           filled: true,
                           fillColor: Color(0xFFF5FCF9),
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16.0 * 1.5, vertical: 16.0),
+                              horizontal: 24.0, vertical: 16.0),
                           border: OutlineInputBorder(
                             borderSide: BorderSide.none,
                             borderRadius: BorderRadius.all(Radius.circular(50)),
                           ),
                         ),
-                        onSaved: (name) {
-                          // Save it
-                        },
+                        onSaved: (value) => fullName = value,
                       ),
                       const SizedBox(height: 16.0),
+
+                      // Phone
                       TextFormField(
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Please enter Phone number'
+                            : null,
                         decoration: const InputDecoration(
                           hintText: 'Phone',
                           filled: true,
                           fillColor: Color(0xFFF5FCF9),
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16.0 * 1.5, vertical: 16.0),
+                              horizontal: 24.0, vertical: 16.0),
                           border: OutlineInputBorder(
                             borderSide: BorderSide.none,
                             borderRadius: BorderRadius.all(Radius.circular(50)),
                           ),
                         ),
                         keyboardType: TextInputType.phone,
-                        onSaved: (phone) {
-                          // Save it
-                        },
+                        onSaved: (value) => phone = value,
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                            hintText: 'Password',
-                            filled: true,
-                            fillColor: Color(0xFFF5FCF9),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16.0 * 1.5, vertical: 16.0),
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide.none,
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(50)),
-                            ),
-                          ),
-                          obscureText: true,
-                          onSaved: (passaword) {
-                            // Save it
-                          },
-                        ),
-                      ),
-                      DropdownButtonFormField(
-                        items: countries,
-                        icon: const Icon(Icons.expand_more),
-                        onSaved: (country) {
-                          // save it
+                      const SizedBox(height: 16.0),
+
+                      // Email
+                      TextFormField(
+                        validator: (value) {
+                          if (value == null || value.isEmpty)
+                            return 'Please enter Email';
+                          if (!value.contains('@'))
+                            return 'Enter a valid email address';
+                          return null;
                         },
-                        onChanged: (value) {},
                         decoration: const InputDecoration(
-                          hintText: 'Country',
+                          hintText: 'Email',
                           filled: true,
                           fillColor: Color(0xFFF5FCF9),
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16.0 * 1.5, vertical: 16.0),
+                              horizontal: 24.0, vertical: 16.0),
                           border: OutlineInputBorder(
                             borderSide: BorderSide.none,
                             borderRadius: BorderRadius.all(Radius.circular(50)),
                           ),
                         ),
+                        keyboardType: TextInputType.emailAddress,
+                        onSaved: (value) => email = value,
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              _formKey.currentState!.save();
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            backgroundColor: const Color(0xFF00BF6D),
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(double.infinity, 48),
-                            shape: const StadiumBorder(),
+                      const SizedBox(height: 16.0),
+
+                      // Password
+                      TextFormField(
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Please enter Password'
+                            : null,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          hintText: 'Password',
+                          filled: true,
+                          fillColor: Color(0xFFF5FCF9),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 24.0, vertical: 16.0),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide.none,
+                            borderRadius: BorderRadius.all(Radius.circular(50)),
                           ),
-                          child: const Text("Sign Up"),
                         ),
+                        onSaved: (value) => password = value,
                       ),
+                      const SizedBox(height: 24.0),
+
+                      // Sign Up Button
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            _formKey.currentState!.save();
+                            try {
+                              final response =
+                                  await _auth.signUp(email!, password!);
+                              if (response.user != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content:
+                                          Text('Account created successfully')),
+                                );
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const SignInScreen()),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Sign up failed')),
+                                );
+                              }
+                            } catch (e) {
+                              final errorMsg = e is AuthException
+                                  ? e.message
+                                  : 'Unexpected error occurred';
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(errorMsg)),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: const Color(0xFF00BF6D),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 48),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: const Text("Sign Up"),
+                      ),
+                      const SizedBox(height: 16.0),
+
+                      // Already have an account
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SignInScreen()),
+                          );
+                        },
                         child: Text.rich(
                           const TextSpan(
                             text: "Already have an account? ",
@@ -157,16 +221,3 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 }
-
-// only for demo
-List<DropdownMenuItem<String>>? countries = [
-  "Bangladesh",
-  "Switzerland",
-  'Canada',
-  'Japan',
-  'Germany',
-  'Australia',
-  'Sweden',
-].map<DropdownMenuItem<String>>((String value) {
-  return DropdownMenuItem<String>(value: value, child: Text(value));
-}).toList();

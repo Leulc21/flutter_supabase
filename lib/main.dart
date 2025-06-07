@@ -1,4 +1,4 @@
-import 'package:flu_supa/auth/screen/signup_screen.dart';
+import 'package:flu_supa/screens/check.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,6 +26,6 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
-        home: SignUpScreen());
+        home: const Check());
   }
 }
